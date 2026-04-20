@@ -1,0 +1,321 @@
+#include "game.h"
+
+#include <cstdlib>
+#include <ctime>
+
+namespace
+{
+// Number of milliseconds that the piece remains before going 1 block down.
+static const int kWaitTimeMs = 700;
+
+// When the falling piece is resting on the ground, wait this long before
+// locking it (unless hard dropped). This gives the player a small window to
+// slide/rotate.
+static const int kLockDelayMs = 500;
+
+// Classic line clear pause.
+static const int kLineClearPauseMs = 500;
+
+// Score threshold for cube rotation.
+static const int kRotateEveryScore = 500;
+} // namespace
+
+Game::Game(Board &board, Pieces &pieces) : mBoard(board), mPieces(pieces)
+{
+    Reset((std::uint32_t)std::time(nullptr));
+}
+
+void Game::Reset(std::uint32_t seed)
+{
+    std::srand((unsigned int)seed);
+
+    // Reset the board state too.
+    mBoard.InitBoard();
+
+    mScore = 0;
+    mRotateIndex = 0;
+    mNextRotateAt = kRotateEveryScore;
+    mFallAccumMs = 0;
+    mLockAccumMs = 0;
+    mPauseMs = 0;
+    mPendingSpawn = false;
+    mPendingRotateSteps = 0;
+    mGameOver = false;
+    mHasActivePiece = true;
+
+    // First piece (active)
+    mPiece = GetRand(0, 6);
+    mRotation = GetRand(0, 3);
+    mPosX = (BOARD_WIDTH / 2) + mPieces.GetXInitialPosition(mPiece, mRotation);
+    mPosY = mPieces.GetYInitialPosition(mPiece, mRotation);
+
+    // Next piece (preview)
+    mNextPiece = GetRand(0, 6);
+    mNextRotation = GetRand(0, 3);
+    mNextPosX = BOARD_WIDTH + 5;
+    mNextPosY = 5;
+}
+
+int Game::GetRand(int a, int b) { return std::rand() % (b - a + 1) + a; }
+
+int Game::ScoreForLines(int lines) const
+{
+    // Modern flat scoring. If cascades clear >4 lines total, score in chunks.
+    int score = 0;
+    while (lines >= 4) {
+        score += 800;
+        lines -= 4;
+    }
+    switch (lines) {
+    case 1:
+        return score + 100;
+    case 2:
+        return score + 300;
+    case 3:
+        return score + 500;
+    default:
+        return score;
+    }
+}
+
+void Game::AdvanceNextRotateAt()
+{
+    // Rotate every fixed score increment.
+    mRotateIndex++;
+    mNextRotateAt += kRotateEveryScore;
+}
+
+void Game::RollNext()
+{
+    mNextPiece = GetRand(0, 6);
+    mNextRotation = GetRand(0, 3);
+}
+
+bool Game::CanMoveDown() const
+{
+    return mBoard.IsPossibleMovement(mPosX, mPosY + 1, mPiece, mRotation);
+}
+
+void Game::SpawnFromNext()
+{
+    mPiece = mNextPiece;
+    mRotation = mNextRotation;
+    mPosX = (BOARD_WIDTH / 2) + mPieces.GetXInitialPosition(mPiece, mRotation);
+    mPosY = mPieces.GetYInitialPosition(mPiece, mRotation);
+    RollNext();
+
+    mHasActivePiece = true;
+
+    // Spawn validity check.
+    if (!mBoard.IsPossibleMovement(mPosX, mPosY, mPiece, mRotation)) {
+        mGameOver = true;
+        return;
+    }
+
+    mLockAccumMs = 0;
+}
+
+void Game::MoveLeft()
+{
+    if (mGameOver)
+        return;
+    if (IsPaused())
+        return;
+    if (mBoard.IsPossibleMovement(mPosX - 1, mPosY, mPiece, mRotation))
+        mPosX--;
+
+    if (CanMoveDown())
+        mLockAccumMs = 0;
+}
+
+void Game::MoveRight()
+{
+    if (mGameOver)
+        return;
+    if (IsPaused())
+        return;
+    if (mBoard.IsPossibleMovement(mPosX + 1, mPosY, mPiece, mRotation))
+        mPosX++;
+
+    if (CanMoveDown())
+        mLockAccumMs = 0;
+}
+
+void Game::SoftDrop()
+{
+    if (mGameOver)
+        return;
+    if (IsPaused())
+        return;
+    if (CanMoveDown()) {
+        mPosY++;
+        mLockAccumMs = 0;
+    } else {
+        // Don't lock instantly; let the lock delay apply.
+        // If you want "instant lock" on down, change this to LandPiece().
+        mLockAccumMs = kLockDelayMs;
+    }
+}
+
+void Game::HardDrop()
+{
+    if (mGameOver)
+        return;
+    if (IsPaused())
+        return;
+
+    // Walk down to the first invalid position, then lock at y-1.
+    while (mBoard.IsPossibleMovement(mPosX, mPosY, mPiece, mRotation))
+        mPosY++;
+
+    // Walk ends on first invalid. Lock at y-1.
+    mPosY -= 1;
+    LandPiece();
+}
+
+void Game::RotateCW()
+{
+    if (mGameOver)
+        return;
+    if (IsPaused())
+        return;
+    int nextRot = (mRotation + 1) % 4;
+    if (mBoard.IsPossibleMovement(mPosX, mPosY, mPiece, nextRot))
+        mRotation = nextRot;
+
+    if (CanMoveDown())
+        mLockAccumMs = 0;
+}
+
+void Game::LandPiece()
+{
+    // Lock the current falling piece.
+    mBoard.StorePiece(mPosX, mPosY, mPiece, mRotation);
+    mHasActivePiece = false;
+
+    auto ClearCascades = [&]() -> int {
+        int total = 0;
+        while (true) {
+            int c = mBoard.DeletePossibleLines();
+            if (c <= 0)
+                break;
+            total += c;
+        }
+        return total;
+    };
+
+    // Resolve clears (cascades)
+    int clearedTotal = ClearCascades();
+    mScore += ScoreForLines(clearedTotal);
+
+    // Queue score-based rotations, but do not apply them yet. We want to pause
+    // after landing so the player can see the score/board update.
+    while (mScore >= mNextRotateAt) {
+        mPendingRotateSteps++;
+        AdvanceNextRotateAt();
+    }
+
+    if (mBoard.IsGameOver()) {
+        mGameOver = true;
+        return;
+    }
+
+    // Always pause after a landing (classic feel) before applying any pending
+    // cube rotation and spawning the next piece.
+    mPauseMs = kLineClearPauseMs;
+    mPendingSpawn = true;
+    return;
+}
+
+void Game::Tick(int deltaMs)
+{
+    if (mGameOver)
+        return;
+    if (deltaMs <= 0)
+        return;
+
+    // Clamp to avoid huge jumps (breakpoints, hitching).
+    if (deltaMs > 250)
+        deltaMs = 250;
+
+    // Pause (e.g. after line clear): freeze game simulation.
+    if (mPauseMs > 0) {
+        mPauseMs -= deltaMs;
+        if (mPauseMs <= 0) {
+            mPauseMs = 0;
+
+            // Apply any pending score rotations after the post-land pause.
+            if (mPendingRotateSteps > 0) {
+                auto ClearCascades = [&]() -> int {
+                    int total = 0;
+                    while (true) {
+                        int c = mBoard.DeletePossibleLines();
+                        if (c <= 0)
+                            break;
+                        total += c;
+                    }
+                    return total;
+                };
+
+                int clearedTotal = 0;
+                while (mPendingRotateSteps > 0) {
+                    mBoard.RotateCW();
+                    mPendingRotateSteps--;
+
+                    int rotatedClears = ClearCascades();
+                    clearedTotal += rotatedClears;
+                    mScore += ScoreForLines(rotatedClears);
+
+                    // Rotation clears can raise score enough to queue
+                    // additional rotations.
+                    while (mScore >= mNextRotateAt) {
+                        mPendingRotateSteps++;
+                        AdvanceNextRotateAt();
+                    }
+                }
+
+                if (mBoard.IsGameOver()) {
+                    mGameOver = true;
+                    return;
+                }
+
+                // If rotated clears happened, pause again before spawning.
+                if (clearedTotal > 0) {
+                    mPauseMs = kLineClearPauseMs;
+                    mPendingSpawn = true;
+                    return;
+                }
+            }
+
+            if (mPendingSpawn) {
+                mPendingSpawn = false;
+                SpawnFromNext();
+            }
+        }
+        return;
+    }
+
+    mFallAccumMs += deltaMs;
+
+    // If we're resting, count toward lock.
+    if (!CanMoveDown()) {
+        mLockAccumMs += deltaMs;
+        if (mLockAccumMs >= kLockDelayMs) {
+            LandPiece();
+            return;
+        }
+    } else {
+        mLockAccumMs = 0;
+    }
+
+    while (mFallAccumMs >= kWaitTimeMs && !mGameOver) {
+        mFallAccumMs -= kWaitTimeMs;
+
+        if (CanMoveDown()) {
+            mPosY++;
+        } else {
+            // Resting: don't lock immediately; let the lock delay handle it.
+            mLockAccumMs = 0;
+        }
+    }
+}
