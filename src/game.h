@@ -4,7 +4,9 @@
 #include "board.h"
 #include "pieces.h"
 
+#include <array>
 #include <cstdint>
+#include <random>
 
 // Game logic + state (no rendering / no input backend).
 class Game {
@@ -45,6 +47,11 @@ class Game {
     Board &mBoard;
     Pieces &mPieces;
 
+    // RNG + 7-bag piece generator.
+    std::mt19937 mRng;
+    std::array<int, 7> mBag;
+    int mBagPos;
+
     // Falling piece.
     int mPosX;
     int mPosY;
@@ -82,7 +89,8 @@ class Game {
 
     bool mGameOver;
 
-    int GetRand(int a, int b);
+    void RefillBag();
+    int NextPieceFromBag();
     void SpawnFromNext();
     void RollNext();
 

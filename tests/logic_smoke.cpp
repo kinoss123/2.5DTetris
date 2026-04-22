@@ -2,6 +2,10 @@
 #include <cstdlib>
 #include <ctime>
 
+#include <algorithm>
+#include <array>
+#include <random>
+
 // Test-only access to board internals for printing.
 #define private public
 #include "board.h"
@@ -89,8 +93,21 @@ int main(int argc, char **argv)
                             : (unsigned int)std::time(nullptr);
     int pieceCount = (argc >= 3) ? std::atoi(argv[2]) : 50;
 
-    std::srand(seed);
     std::printf("seed=%u pieces=%d\n", seed, pieceCount);
+
+    std::mt19937 rng(seed);
+    std::array<int, 7> bag;
+    int bagPos = (int)bag.size();
+
+    auto NextPieceFromBag = [&]() -> int {
+        if (bagPos >= (int)bag.size()) {
+            for (int i = 0; i < (int)bag.size(); i++)
+                bag[(std::size_t)i] = i;
+            std::shuffle(bag.begin(), bag.end(), rng);
+            bagPos = 0;
+        }
+        return bag[(std::size_t)bagPos++];
+    };
 
     Pieces pieces;
     Board board(&pieces, /*screenHeight*/ 480);
@@ -100,8 +117,8 @@ int main(int argc, char **argv)
     int landed = 0;
 
     for (int n = 0; n < pieceCount; n++) {
-        int piece = std::rand() % 7;
-        int rot = std::rand() % 4;
+        int piece = NextPieceFromBag();
+        int rot = 0;
         int y = pieces.GetYInitialPosition(piece, rot);
 
         // Edge-focused spawn: push the piece as far right as possible (walls

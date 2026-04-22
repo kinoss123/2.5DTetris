@@ -1,6 +1,6 @@
 #include "game.h"
 
-#include <cstdlib>
+#include <algorithm>
 #include <ctime>
 
 namespace
@@ -25,9 +25,24 @@ Game::Game(Board &board, Pieces &pieces) : mBoard(board), mPieces(pieces)
     Reset((std::uint32_t)std::time(nullptr));
 }
 
+void Game::RefillBag()
+{
+    for (int i = 0; i < (int)mBag.size(); i++)
+        mBag[(std::size_t)i] = i;
+    std::shuffle(mBag.begin(), mBag.end(), mRng);
+    mBagPos = 0;
+}
+
+int Game::NextPieceFromBag()
+{
+    if (mBagPos >= (int)mBag.size())
+        RefillBag();
+    return mBag[(std::size_t)mBagPos++];
+}
+
 void Game::Reset(std::uint32_t seed)
 {
-    std::srand((unsigned int)seed);
+    mRng.seed(seed);
 
     // Reset the board state too.
     mBoard.InitBoard();
@@ -43,20 +58,21 @@ void Game::Reset(std::uint32_t seed)
     mGameOver = false;
     mHasActivePiece = true;
 
+    // Ensure first NextPieceFromBag() refills deterministically.
+    mBagPos = (int)mBag.size();
+
     // First piece (active)
-    mPiece = GetRand(0, 6);
-    mRotation = GetRand(0, 3);
+    mPiece = NextPieceFromBag();
+    mRotation = 0;
     mPosX = (BOARD_WIDTH / 2) + mPieces.GetXInitialPosition(mPiece, mRotation);
     mPosY = mPieces.GetYInitialPosition(mPiece, mRotation);
 
     // Next piece (preview)
-    mNextPiece = GetRand(0, 6);
-    mNextRotation = GetRand(0, 3);
+    mNextPiece = NextPieceFromBag();
+    mNextRotation = 0;
     mNextPosX = BOARD_WIDTH + 5;
     mNextPosY = 5;
 }
-
-int Game::GetRand(int a, int b) { return std::rand() % (b - a + 1) + a; }
 
 int Game::ScoreForLines(int lines) const
 {
@@ -87,8 +103,8 @@ void Game::AdvanceNextRotateAt()
 
 void Game::RollNext()
 {
-    mNextPiece = GetRand(0, 6);
-    mNextRotation = GetRand(0, 3);
+    mNextPiece = NextPieceFromBag();
+    mNextRotation = 0;
 }
 
 bool Game::CanMoveDown() const

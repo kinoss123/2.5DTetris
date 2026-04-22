@@ -13,20 +13,9 @@ static float EaseInOut(float t)
         return 0.0f;
     if (t >= 1.0f)
         return 1.0f;
-    // smoothstep
     return t * t * (3.0f - 2.0f * t);
 }
-} // namespace
-
-/*
-==================
-Main
-==================
-
-NOTE: This is kept building without SDL, but the project currently builds only
-the logic smoke test via CMake. A future version will add a raylib backend and
-re-enable a real interactive main.
-*/
+}
 
 int main(int argc, char **argv)
 {
