@@ -36,7 +36,8 @@ target_link_libraries(logic_smoke PRIVATE tetris_core)
 # Interactive app (raylib)
 add_executable(tetris
     src/main.cpp
-    src/io.cpp
+    src/platform.cpp
+    src/renderer.cpp
     src/input.cpp
     src/ui.cpp
     src/ui3d.cpp

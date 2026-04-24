@@ -2,6 +2,8 @@
 
 #include "game.h"
 
+#include <raylib.h>
+
 namespace
 {
 // Delayed auto-shift (DAS) and auto-repeat rate (ARR).
@@ -12,28 +14,28 @@ static const int kARRMs = 50;
 static const int kDownRepeatMs = 33;
 } // namespace
 
-GameAction PollAction(IO &io, int deltaMs, InputState &state)
+GameAction PollAction(int deltaMs, InputState &state)
 {
     if (deltaMs < 0)
         deltaMs = 0;
     if (deltaMs > 250)
         deltaMs = 250;
 
-    // Edge-triggered actions via Pollkey.
-    IOKey key = io.Pollkey();
+    // Edge-triggered actions via raylib key-press events.
+    int key = GetKeyPressed();
     switch (key) {
-    case IOKey::Escape:
+    case KEY_ESCAPE:
         return GameAction::Quit;
-    case IOKey::X:
+    case KEY_X:
         return GameAction::HardDrop;
-    case IOKey::Z:
+    case KEY_Z:
         return GameAction::RotateCW;
     default:
         break;
     }
 
-    bool leftDown = io.IsKeyDown(IOKey::Left) != 0;
-    bool rightDown = io.IsKeyDown(IOKey::Right) != 0;
+    bool leftDown = ::IsKeyDown(KEY_LEFT);
+    bool rightDown = ::IsKeyDown(KEY_RIGHT);
 
     // If both are held, cancel horizontal movement.
     if (leftDown && rightDown) {
@@ -42,7 +44,7 @@ GameAction PollAction(IO &io, int deltaMs, InputState &state)
     }
 
     // Down is a fast-fall while held (throttled so it's controllable).
-    if (io.IsKeyDown(IOKey::Down)) {
+    if (::IsKeyDown(KEY_DOWN)) {
         state.downRepeatMs += deltaMs;
         if (state.downRepeatMs >= kDownRepeatMs) {
             state.downRepeatMs = 0;

@@ -4,10 +4,10 @@
 
 #include <cstdio>
 
-void UI::DrawPiece(IO &io, const Board &board, const Pieces &pieces, int x,
+void UI::DrawPiece(Renderer &r, const Board &board, const Pieces &pieces, int x,
                    int y, int piece, int rotation)
 {
-    IOColor c = PieceIOColorForKind(piece);
+    RenderColor c = PieceRenderColorForKind(piece);
 
     // Small inset so blocks don't visually merge.
     static const int kPad = 1;
@@ -18,7 +18,7 @@ void UI::DrawPiece(IO &io, const Board &board, const Pieces &pieces, int x,
     for (int i = 0; i < PIECE_BLOCKS; i++) {
         for (int j = 0; j < PIECE_BLOCKS; j++) {
             if (pieces.GetBlockType(piece, rotation, j, i) != 0)
-                io.DrawRectangle(
+                r.DrawRectangle(
                     pixelsX + i * BLOCK_SIZE + kPad,
                     pixelsY + j * BLOCK_SIZE + kPad,
                     (pixelsX + i * BLOCK_SIZE) + BLOCK_SIZE - 1 - kPad,
@@ -27,16 +27,16 @@ void UI::DrawPiece(IO &io, const Board &board, const Pieces &pieces, int x,
     }
 }
 
-void UI::DrawBoard(IO &io, const Board &board, int screenHeight)
+void UI::DrawBoard(Renderer &r, const Board &board, int screenHeight)
 {
     int x1 = BOARD_POSITION - (BLOCK_SIZE * (BOARD_WIDTH / 2)) - 1;
     int x2 = BOARD_POSITION + (BLOCK_SIZE * (BOARD_WIDTH / 2));
     int y = screenHeight - (BLOCK_SIZE * BOARD_HEIGHT);
 
-    io.DrawRectangle(x1 - BOARD_LINE_WIDTH, y, x1, screenHeight - 1,
-                     IOColor::Blue);
-    io.DrawRectangle(x2, y, x2 + BOARD_LINE_WIDTH, screenHeight - 1,
-                     IOColor::Blue);
+    r.DrawRectangle(x1 - BOARD_LINE_WIDTH, y, x1, screenHeight - 1,
+                    RenderColor::Blue);
+    r.DrawRectangle(x2, y, x2 + BOARD_LINE_WIDTH, screenHeight - 1,
+                    RenderColor::Blue);
 
     x1 += 1;
     static const int kPad = 1;
@@ -44,29 +44,29 @@ void UI::DrawBoard(IO &io, const Board &board, int screenHeight)
         for (int j = 0; j < BOARD_HEIGHT; j++) {
             int kind = board.BlockKind(i, j);
             if (kind >= 0)
-                io.DrawRectangle(x1 + i * BLOCK_SIZE + kPad,
-                                 y + j * BLOCK_SIZE + kPad,
-                                 (x1 + i * BLOCK_SIZE) + BLOCK_SIZE - 1 - kPad,
-                                 (y + j * BLOCK_SIZE) + BLOCK_SIZE - 1 - kPad,
-                                 PieceIOColorForKind(kind));
+                r.DrawRectangle(x1 + i * BLOCK_SIZE + kPad,
+                                y + j * BLOCK_SIZE + kPad,
+                                (x1 + i * BLOCK_SIZE) + BLOCK_SIZE - 1 - kPad,
+                                (y + j * BLOCK_SIZE) + BLOCK_SIZE - 1 - kPad,
+                                PieceRenderColorForKind(kind));
         }
     }
 }
 
-void UI::Draw(IO &io, const Board &board, const Pieces &pieces,
+void UI::Draw(Renderer &r, const Board &board, const Pieces &pieces,
               const Game &game, int screenHeight)
 {
-    DrawBoard(io, board, screenHeight);
-    DrawPiece(io, board, pieces, game.ActiveX(), game.ActiveY(),
+    DrawBoard(r, board, screenHeight);
+    DrawPiece(r, board, pieces, game.ActiveX(), game.ActiveY(),
               game.ActivePiece(), game.ActiveRotation());
 
-    DrawHud(io, board, pieces, game);
+    DrawHud(r, board, pieces, game);
 }
 
-void UI::DrawHud(IO &io, const Board &board, const Pieces &pieces,
+void UI::DrawHud(Renderer &r, const Board &board, const Pieces &pieces,
                  const Game &game)
 {
-    const int screenW = io.GetScreenWidth();
+    const int screenW = r.GetScreenWidth();
 
     const int kMargin = 12;
     const int kGap = 10;
@@ -85,52 +85,48 @@ void UI::DrawHud(IO &io, const Board &board, const Pieces &pieces,
     const int faceY1 = nextY2 + kGap;
     const int faceY2 = faceY1 + kFaceBoxH;
 
-    // Background boxes.
-    io.DrawRectangle(x1, scoreY1, x2, scoreY2, IOColor::DarkGray);
-    io.DrawRectangle(x1, nextY1, x2, nextY2, IOColor::DarkGray);
-    io.DrawRectangle(x1, faceY1, x2, faceY2, IOColor::DarkGray);
+    r.DrawRectangle(x1, scoreY1, x2, scoreY2, RenderColor::DarkGray);
+    r.DrawRectangle(x1, nextY1, x2, nextY2, RenderColor::DarkGray);
+    r.DrawRectangle(x1, faceY1, x2, faceY2, RenderColor::DarkGray);
 
     // Borders.
-    io.DrawRectangle(x1, scoreY1, x2, scoreY1 + 1, IOColor::LightGray);
-    io.DrawRectangle(x1, scoreY2 - 1, x2, scoreY2, IOColor::LightGray);
-    io.DrawRectangle(x1, scoreY1, x1 + 1, scoreY2, IOColor::LightGray);
-    io.DrawRectangle(x2 - 1, scoreY1, x2, scoreY2, IOColor::LightGray);
+    r.DrawRectangle(x1, scoreY1, x2, scoreY1 + 1, RenderColor::LightGray);
+    r.DrawRectangle(x1, scoreY2 - 1, x2, scoreY2, RenderColor::LightGray);
+    r.DrawRectangle(x1, scoreY1, x1 + 1, scoreY2, RenderColor::LightGray);
+    r.DrawRectangle(x2 - 1, scoreY1, x2, scoreY2, RenderColor::LightGray);
 
-    io.DrawRectangle(x1, nextY1, x2, nextY1 + 1, IOColor::LightGray);
-    io.DrawRectangle(x1, nextY2 - 1, x2, nextY2, IOColor::LightGray);
-    io.DrawRectangle(x1, nextY1, x1 + 1, nextY2, IOColor::LightGray);
-    io.DrawRectangle(x2 - 1, nextY1, x2, nextY2, IOColor::LightGray);
+    r.DrawRectangle(x1, nextY1, x2, nextY1 + 1, RenderColor::LightGray);
+    r.DrawRectangle(x1, nextY2 - 1, x2, nextY2, RenderColor::LightGray);
+    r.DrawRectangle(x1, nextY1, x1 + 1, nextY2, RenderColor::LightGray);
+    r.DrawRectangle(x2 - 1, nextY1, x2, nextY2, RenderColor::LightGray);
 
-    io.DrawRectangle(x1, faceY1, x2, faceY1 + 1, IOColor::LightGray);
-    io.DrawRectangle(x1, faceY2 - 1, x2, faceY2, IOColor::LightGray);
-    io.DrawRectangle(x1, faceY1, x1 + 1, faceY2, IOColor::LightGray);
-    io.DrawRectangle(x2 - 1, faceY1, x2, faceY2, IOColor::LightGray);
+    r.DrawRectangle(x1, faceY1, x2, faceY1 + 1, RenderColor::LightGray);
+    r.DrawRectangle(x1, faceY2 - 1, x2, faceY2, RenderColor::LightGray);
+    r.DrawRectangle(x1, faceY1, x1 + 1, faceY2, RenderColor::LightGray);
+    r.DrawRectangle(x2 - 1, faceY1, x2, faceY2, RenderColor::LightGray);
 
-    // Score label and value (centered).
     const char *scoreLabel = "SCORE";
-    const int scoreLabelSize = 12;
-    const int scoreValueSize = 20;
-    int scoreLabelW = io.MeasureTextWidth(scoreLabel, scoreLabelSize);
+    const int scoreLabelSize = 16;
+    const int scoreValueSize = 32;
+    int scoreLabelW = r.MeasureTextWidth(scoreLabel, scoreLabelSize);
     int scoreLabelX = x1 + (kBoxW - scoreLabelW) / 2;
-    io.DrawText(scoreLabelX, scoreY1 + 8, scoreLabel, scoreLabelSize,
-                IOColor::White);
+    r.DrawText(scoreLabelX, scoreY1 + 8, scoreLabel, scoreLabelSize,
+               RenderColor::White);
 
     char buf[64];
     std::snprintf(buf, sizeof(buf), "%d", game.Score());
-    int scoreValueW = io.MeasureTextWidth(buf, scoreValueSize);
+    int scoreValueW = r.MeasureTextWidth(buf, scoreValueSize);
     int scoreValueX = x1 + (kBoxW - scoreValueW) / 2;
-    io.DrawText(scoreValueX, scoreY1 + 26, buf, scoreValueSize,
-                IOColor::Yellow);
+    r.DrawText(scoreValueX, scoreY1 + 26, buf, scoreValueSize,
+               RenderColor::Yellow);
 
-    // Next label (centered).
     const char *nextLabel = "NEXT";
-    const int nextLabelSize = 12;
-    int nextLabelW = io.MeasureTextWidth(nextLabel, nextLabelSize);
+    const int nextLabelSize = 16;
+    int nextLabelW = r.MeasureTextWidth(nextLabel, nextLabelSize);
     int nextLabelX = x1 + (kBoxW - nextLabelW) / 2;
-    io.DrawText(nextLabelX, nextY1 + 8, nextLabel, nextLabelSize,
-                IOColor::White);
+    r.DrawText(nextLabelX, nextY1 + 8, nextLabel, nextLabelSize,
+               RenderColor::White);
 
-    // Next piece preview inside the NEXT box (12px blocks, centered).
     static const int kPreviewBlock = 12;
     static const int kPreviewPad = 8;
     const int boxInnerX1 = x1 + kPreviewPad;
@@ -145,7 +141,6 @@ void UI::DrawHud(IO &io, const Board &board, const Pieces &pieces,
     const int previewY0 =
         boxInnerY1 + ((boxInnerY2 - boxInnerY1) - previewH) / 2;
 
-    // Draw 5x5 block matrix.
     for (int i = 0; i < PIECE_BLOCKS; i++) {
         for (int j = 0; j < PIECE_BLOCKS; j++) {
             int t = pieces.GetBlockType(game.NextPiece(), game.NextRotation(),
@@ -153,25 +148,25 @@ void UI::DrawHud(IO &io, const Board &board, const Pieces &pieces,
             if (t == 0)
                 continue;
 
-            IOColor c = PieceIOColorForKind(game.NextPiece());
+            RenderColor c = PieceRenderColorForKind(game.NextPiece());
             const int xA = previewX0 + i * kPreviewBlock;
             const int yA = previewY0 + j * kPreviewBlock;
-            io.DrawRectangle(xA + 1, yA + 1, xA + kPreviewBlock - 2,
-                              yA + kPreviewBlock - 2, c);
+            r.DrawRectangle(xA + 1, yA + 1, xA + kPreviewBlock - 2,
+                            yA + kPreviewBlock - 2, c);
         }
     }
 
-    // Face indicator.
     const char *faceLabel = "FACE";
-    const int faceLabelSize = 12;
-    int faceLabelW = io.MeasureTextWidth(faceLabel, faceLabelSize);
+    const int faceLabelSize = 16;
+    int faceLabelW = r.MeasureTextWidth(faceLabel, faceLabelSize);
     int faceLabelX = x1 + (kBoxW - faceLabelW) / 2;
-    io.DrawText(faceLabelX, faceY1 + 8, faceLabel, faceLabelSize,
-                IOColor::White);
+    r.DrawText(faceLabelX, faceY1 + 8, faceLabel, faceLabelSize,
+               RenderColor::White);
 
     std::snprintf(buf, sizeof(buf), "%d/4", board.ActiveFace() + 1);
-    const int faceValueSize = 18;
-    int faceValueW = io.MeasureTextWidth(buf, faceValueSize);
+    const int faceValueSize = 24;
+    int faceValueW = r.MeasureTextWidth(buf, faceValueSize);
     int faceValueX = x1 + (kBoxW - faceValueW) / 2;
-    io.DrawText(faceValueX, faceY1 + 26, buf, faceValueSize, IOColor::White);
+    r.DrawText(faceValueX, faceY1 + 26, buf, faceValueSize,
+               RenderColor::White);
 }

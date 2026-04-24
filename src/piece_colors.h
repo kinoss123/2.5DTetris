@@ -1,10 +1,7 @@
 #ifndef _PIECE_COLORS_
 #define _PIECE_COLORS_
 
-#include "io.h"
-
-// Shared tetromino color mapping (classic fixed colors).
-// This header intentionally does NOT include raylib.
+#include "colors.h"
 
 struct RGBA8 {
     unsigned char r;
@@ -47,37 +44,36 @@ inline PieceColorId PieceColorIdForKind(int kind)
     }
 }
 
-inline IOColor PieceIOColorForKind(int kind)
+inline RenderColor PieceRenderColorForKind(int kind)
 {
     switch (PieceColorIdForKind(kind)) {
     case PieceColorId::Yellow:
-        return IOColor::Yellow;
+        return RenderColor::Yellow;
     case PieceColorId::Cyan:
-        return IOColor::Cyan;
+        return RenderColor::Cyan;
     case PieceColorId::Orange:
-        return IOColor::Orange;
+        return RenderColor::Orange;
     case PieceColorId::Blue:
-        return IOColor::Blue;
+        return RenderColor::Blue;
     case PieceColorId::Red:
-        return IOColor::Red;
+        return RenderColor::Red;
     case PieceColorId::Green:
-        return IOColor::Green;
+        return RenderColor::Green;
     case PieceColorId::Purple:
-        return IOColor::Magenta;
+        return RenderColor::Magenta;
     case PieceColorId::White:
     default:
-        return IOColor::White;
+        return RenderColor::White;
     }
 }
 
 inline RGBA8 PieceRGBAForKind(int kind)
 {
-    // Values chosen to match raylib's built-in palette.
     switch (PieceColorIdForKind(kind)) {
     case PieceColorId::Yellow:
         return {253, 249, 0, 255};
     case PieceColorId::Cyan:
-        return {102, 191, 255, 255}; // SKYBLUE
+        return {102, 191, 255, 255};
     case PieceColorId::Orange:
         return {255, 161, 0, 255};
     case PieceColorId::Blue:
@@ -90,8 +86,8 @@ inline RGBA8 PieceRGBAForKind(int kind)
         return {200, 122, 255, 255};
     case PieceColorId::White:
     default:
-        return {245, 245, 245, 255}; // RAYWHITE
+        return {245, 245, 245, 255};
     }
 }
 
-#endif // _PIECE_COLORS_
+#endif

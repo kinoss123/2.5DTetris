@@ -1,5 +1,7 @@
 #include "game.h"
 #include "input.h"
+#include "platform.h"
+#include "renderer.h"
 #include "ui.h"
 #include "ui3d.h"
 
@@ -28,8 +30,9 @@ int main(int argc, char **argv)
             rotateDemo = true;
     }
 
-    IO mIO;
-    int mScreenHeight = mIO.GetScreenHeight();
+    Platform platform;
+    Renderer renderer;
+    int mScreenHeight = renderer.GetScreenHeight();
 
     // Pieces
     Pieces mPieces;
@@ -69,10 +72,10 @@ int main(int argc, char **argv)
 
     // ----- Main Loop -----
     while (true) {
-        if (mIO.ShouldClose())
+        if (platform.ShouldClose())
             break;
 
-        int deltaMs = mIO.DeltaMs();
+        int deltaMs = platform.DeltaMs();
 
         // In rotate demo mode, rotate every so often when idle.
         if (rotateDemo && !anim.active) {
@@ -94,16 +97,17 @@ int main(int argc, char **argv)
 
         if (anim.active) {
             // ----- Draw -----
-            mIO.ClearScreen();
+            renderer.BeginFrame();
+            renderer.Clear(RenderColor::Black);
 
             // Animate a 90deg turn per queued step.
             float t = (float)anim.elapsedMs / (float)anim.durationMs;
             float e = EaseInOut(t);
             float angle = e * 90.0f;
             UI3D::DrawRotate(mBoard, anim.stepFromFace, angle);
-            UI::DrawHud(mIO, mBoard, mPieces, mGame);
+            UI::DrawHud(renderer, mBoard, mPieces, mGame);
 
-            mIO.UpdateScreen();
+            renderer.EndFrame();
 
             // Freeze everything during the rotate animation.
             anim.elapsedMs += deltaMs;
@@ -117,7 +121,7 @@ int main(int argc, char **argv)
             }
         } else {
             // ----- Input -----
-            GameAction action = PollAction(mIO, deltaMs, inputState);
+            GameAction action = PollAction(deltaMs, inputState);
             if (action == GameAction::Quit)
                 break;
             if (!mGame.IsPaused())
@@ -140,7 +144,8 @@ int main(int argc, char **argv)
             }
 
             // ----- Draw -----
-            mIO.ClearScreen();
+            renderer.BeginFrame();
+            renderer.Clear(RenderColor::Black);
             if (anim.active) {
                 // Avoid a 1-frame "blink" to the new face before the rotation
                 // animation starts.
@@ -148,8 +153,8 @@ int main(int argc, char **argv)
             } else {
                 UI3D::DrawActiveFace(mBoard, mPieces, mGame);
             }
-            UI::DrawHud(mIO, mBoard, mPieces, mGame);
-            mIO.UpdateScreen();
+            UI::DrawHud(renderer, mBoard, mPieces, mGame);
+            renderer.EndFrame();
         }
     }
 

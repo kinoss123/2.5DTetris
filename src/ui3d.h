@@ -10,6 +10,6 @@ namespace UI3D
 void DrawActiveFace(const Board &board, const Pieces &pieces, const Game &game);
 void DrawRotate(const Board &board, int fromFace, float angleDeg);
 void Shutdown();
-} // namespace UI3D
+}
 
-#endif // _UI3D_
+#endif

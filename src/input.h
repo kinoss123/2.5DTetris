@@ -1,8 +1,6 @@
 #ifndef _INPUT_
 #define _INPUT_
 
-#include "io.h"
-
 class Game;
 
 enum class GameAction {
@@ -25,8 +23,8 @@ struct InputState {
     int downRepeatMs = 0;
 };
 
-// Translates IO key codes into gameplay actions (edge + held repeats).
-GameAction PollAction(IO &io, int deltaMs, InputState &state);
+// Translates raw key state into gameplay actions (edge + held repeats).
+GameAction PollAction(int deltaMs, InputState &state);
 
 // Applies a single action to the game.
 void ApplyAction(GameAction action, Game &game);

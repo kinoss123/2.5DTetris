@@ -8,4 +8,4 @@ class Pieces {
     int GetYInitialPosition(int pPiece, int pRotation) const;
 };
 
-#endif // _PIECES_
+#endif
