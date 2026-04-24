@@ -10,6 +10,8 @@
 // (RED/GREEN/BLUE/etc).
 enum class IOColor : int {
     Black,
+    DarkGray,
+    LightGray,
     Red,
     Orange,
     Green,

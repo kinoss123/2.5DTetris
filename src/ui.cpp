@@ -71,9 +71,10 @@ void UI::DrawHud(IO &io, const Board &board, const Pieces &pieces,
     const int kMargin = 12;
     const int kGap = 10;
 
-    const int kBoxW = 85;
+    const int kBoxW = 120;
     const int kScoreBoxH = 68;
     const int kNextBoxH = 110;
+    const int kFaceBoxH = 58;
 
     const int x2 = screenW - kMargin;
     const int x1 = x2 - kBoxW;
@@ -81,25 +82,33 @@ void UI::DrawHud(IO &io, const Board &board, const Pieces &pieces,
     const int scoreY2 = scoreY1 + kScoreBoxH;
     const int nextY1 = scoreY2 + kGap;
     const int nextY2 = nextY1 + kNextBoxH;
+    const int faceY1 = nextY2 + kGap;
+    const int faceY2 = faceY1 + kFaceBoxH;
 
-    // Background boxes (slightly brighter than the clear color).
-    io.DrawRectangle(x1, scoreY1, x2, scoreY2, IOColor::Black);
-    io.DrawRectangle(x1, nextY1, x2, nextY2, IOColor::Black);
+    // Background boxes.
+    io.DrawRectangle(x1, scoreY1, x2, scoreY2, IOColor::DarkGray);
+    io.DrawRectangle(x1, nextY1, x2, nextY2, IOColor::DarkGray);
+    io.DrawRectangle(x1, faceY1, x2, faceY2, IOColor::DarkGray);
 
     // Borders.
-    io.DrawRectangle(x1, scoreY1, x2, scoreY1 + 1, IOColor::Blue);
-    io.DrawRectangle(x1, scoreY2 - 1, x2, scoreY2, IOColor::Blue);
-    io.DrawRectangle(x1, scoreY1, x1 + 1, scoreY2, IOColor::Blue);
-    io.DrawRectangle(x2 - 1, scoreY1, x2, scoreY2, IOColor::Blue);
+    io.DrawRectangle(x1, scoreY1, x2, scoreY1 + 1, IOColor::LightGray);
+    io.DrawRectangle(x1, scoreY2 - 1, x2, scoreY2, IOColor::LightGray);
+    io.DrawRectangle(x1, scoreY1, x1 + 1, scoreY2, IOColor::LightGray);
+    io.DrawRectangle(x2 - 1, scoreY1, x2, scoreY2, IOColor::LightGray);
 
-    io.DrawRectangle(x1, nextY1, x2, nextY1 + 1, IOColor::Blue);
-    io.DrawRectangle(x1, nextY2 - 1, x2, nextY2, IOColor::Blue);
-    io.DrawRectangle(x1, nextY1, x1 + 1, nextY2, IOColor::Blue);
-    io.DrawRectangle(x2 - 1, nextY1, x2, nextY2, IOColor::Blue);
+    io.DrawRectangle(x1, nextY1, x2, nextY1 + 1, IOColor::LightGray);
+    io.DrawRectangle(x1, nextY2 - 1, x2, nextY2, IOColor::LightGray);
+    io.DrawRectangle(x1, nextY1, x1 + 1, nextY2, IOColor::LightGray);
+    io.DrawRectangle(x2 - 1, nextY1, x2, nextY2, IOColor::LightGray);
+
+    io.DrawRectangle(x1, faceY1, x2, faceY1 + 1, IOColor::LightGray);
+    io.DrawRectangle(x1, faceY2 - 1, x2, faceY2, IOColor::LightGray);
+    io.DrawRectangle(x1, faceY1, x1 + 1, faceY2, IOColor::LightGray);
+    io.DrawRectangle(x2 - 1, faceY1, x2, faceY2, IOColor::LightGray);
 
     // Score label and value (centered).
     const char *scoreLabel = "SCORE";
-    const int scoreLabelSize = 10;
+    const int scoreLabelSize = 12;
     const int scoreValueSize = 20;
     int scoreLabelW = io.MeasureTextWidth(scoreLabel, scoreLabelSize);
     int scoreLabelX = x1 + (kBoxW - scoreLabelW) / 2;
@@ -115,7 +124,7 @@ void UI::DrawHud(IO &io, const Board &board, const Pieces &pieces,
 
     // Next label (centered).
     const char *nextLabel = "NEXT";
-    const int nextLabelSize = 10;
+    const int nextLabelSize = 12;
     int nextLabelW = io.MeasureTextWidth(nextLabel, nextLabelSize);
     int nextLabelX = x1 + (kBoxW - nextLabelW) / 2;
     io.DrawText(nextLabelX, nextY1 + 8, nextLabel, nextLabelSize,
@@ -148,7 +157,21 @@ void UI::DrawHud(IO &io, const Board &board, const Pieces &pieces,
             const int xA = previewX0 + i * kPreviewBlock;
             const int yA = previewY0 + j * kPreviewBlock;
             io.DrawRectangle(xA + 1, yA + 1, xA + kPreviewBlock - 2,
-                             yA + kPreviewBlock - 2, c);
+                              yA + kPreviewBlock - 2, c);
         }
     }
+
+    // Face indicator.
+    const char *faceLabel = "FACE";
+    const int faceLabelSize = 12;
+    int faceLabelW = io.MeasureTextWidth(faceLabel, faceLabelSize);
+    int faceLabelX = x1 + (kBoxW - faceLabelW) / 2;
+    io.DrawText(faceLabelX, faceY1 + 8, faceLabel, faceLabelSize,
+                IOColor::White);
+
+    std::snprintf(buf, sizeof(buf), "%d/4", board.ActiveFace() + 1);
+    const int faceValueSize = 18;
+    int faceValueW = io.MeasureTextWidth(buf, faceValueSize);
+    int faceValueX = x1 + (kBoxW - faceValueW) / 2;
+    io.DrawText(faceValueX, faceY1 + 26, buf, faceValueSize, IOColor::White);
 }

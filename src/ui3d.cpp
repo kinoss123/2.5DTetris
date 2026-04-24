@@ -147,9 +147,7 @@ void UI3D::DrawRotate(const Board &board, int fromFace, float angleDeg)
 
     BeginMode3D(cam);
 
-    LoadLightShaderOnce();
-    if (gLight.loaded)
-        BeginShaderMode(gLight.shader);
+    // Draw blocks unlit so colors match the 2D preview exactly.
 
     // Global cube yaw. Sign is chosen so a CW face step (0 -> 1) makes the
     // right face swing into view (motion reads right-to-left on screen).
@@ -241,10 +239,6 @@ void UI3D::DrawRotate(const Board &board, int fromFace, float angleDeg)
 
     rlPopMatrix();
 
-    // End lighting before drawing crisp white overlays.
-    if (gLight.loaded)
-        EndShaderMode();
-
     // Overlays (unlit): cube outline + grid.
     rlPushMatrix();
     rlRotatef(globalYawDeg, 0.0f, 1.0f, 0.0f);
@@ -315,9 +309,7 @@ void UI3D::DrawActiveFace(const Board &board, const Pieces &pieces,
 
     BeginMode3D(cam);
 
-    LoadLightShaderOnce();
-    if (gLight.loaded)
-        BeginShaderMode(gLight.shader);
+    // Draw blocks unlit so colors match the 2D preview exactly.
 
     auto WorldX = [&](int x) {
         return (-g.halfW + (g.cube * 0.5f) + (float)x * g.cell);
@@ -345,9 +337,6 @@ void UI3D::DrawActiveFace(const Board &board, const Pieces &pieces,
 
     // Falling piece.
     if (!game.HasActivePiece()) {
-        if (gLight.loaded)
-            EndShaderMode();
-
         // Overlays (unlit): cube outline + grid.
         DrawCubeWires({0.0f, 0.0f, 0.0f}, g.bodyW, g.bodyH, g.bodyD, BLUE);
 
@@ -416,9 +405,6 @@ void UI3D::DrawActiveFace(const Board &board, const Pieces &pieces,
         }
     }
 
-    if (gLight.loaded)
-        EndShaderMode();
-
     // Overlays (unlit): cube outline + grid.
     DrawCubeWires({0.0f, 0.0f, 0.0f}, g.bodyW, g.bodyH, g.bodyD, BLUE);
 
@@ -461,8 +447,6 @@ void UI3D::DrawActiveFace(const Board &board, const Pieces &pieces,
 
 void UI3D::Shutdown()
 {
-    if (!gLight.loaded)
-        return;
-    UnloadShader(gLight.shader);
-    gLight.loaded = false;
+    // Lighting shader is currently unused (blocks are drawn unlit), so there is
+    // nothing to shut down.
 }

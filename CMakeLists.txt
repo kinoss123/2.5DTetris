@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.30)
 
 project(tetris_25d LANGUAGES CXX)
 
@@ -34,7 +34,7 @@ add_executable(logic_smoke
 target_link_libraries(logic_smoke PRIVATE tetris_core)
 
 # Interactive app (raylib)
-add_executable(tetris_app
+add_executable(tetris
     src/main.cpp
     src/io.cpp
     src/input.cpp
@@ -42,7 +42,7 @@ add_executable(tetris_app
     src/ui3d.cpp
 )
 
-target_link_libraries(tetris_app PRIVATE tetris_core raylib)
+target_link_libraries(tetris PRIVATE tetris_core raylib)
 
 # NOTE: The upstream logic smoke program is intentionally verbose and may
 # return non-zero depending on the current gameplay/board rules. We build it

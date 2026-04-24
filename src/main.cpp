@@ -22,7 +22,7 @@ int main(int argc, char **argv)
     bool rotateDemo = false;
 
     // Very small arg parser.
-    // Usage: ./tetris_app --rotate-demo
+    // Usage: ./tetris --rotate-demo
     for (int i = 1; i < argc; i++) {
         if (argv[i] && std::strcmp(argv[i], "--rotate-demo") == 0)
             rotateDemo = true;

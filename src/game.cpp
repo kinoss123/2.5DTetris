@@ -18,6 +18,37 @@ static const int kLineClearPauseMs = 500;
 
 // Score threshold for cube rotation.
 static const int kRotateEveryScore = 500;
+
+struct Kick {
+    int dx;
+    int dy;
+};
+
+// SRS wall kicks (clockwise) using this game's coordinate system where +Y is
+// down. The published SRS tables use +Y up; we pre-flip dy here.
+// Rotation transitions are indexed by the "from" rotation:
+//   0->1, 1->2, 2->3, 3->0.
+static const Kick kJLSTZ_CW[4][5] = {
+    // 0 -> 1: (0,0), (-1,0), (-1,+1), (0,-2), (-1,-2)
+    {{0, 0}, {-1, 0}, {-1, -1}, {0, +2}, {-1, +2}},
+    // 1 -> 2: (0,0), (+1,0), (+1,-1), (0,+2), (+1,+2)
+    {{0, 0}, {+1, 0}, {+1, +1}, {0, -2}, {+1, -2}},
+    // 2 -> 3: (0,0), (+1,0), (+1,+1), (0,-2), (+1,-2)
+    {{0, 0}, {+1, 0}, {+1, -1}, {0, +2}, {+1, +2}},
+    // 3 -> 0: (0,0), (-1,0), (-1,-1), (0,+2), (-1,+2)
+    {{0, 0}, {-1, 0}, {-1, +1}, {0, -2}, {-1, -2}},
+};
+
+static const Kick kI_CW[4][5] = {
+    // 0 -> 1: (0,0), (-2,0), (+1,0), (-2,-1), (+1,+2)
+    {{0, 0}, {-2, 0}, {+1, 0}, {-2, +1}, {+1, -2}},
+    // 1 -> 2: (0,0), (-1,0), (+2,0), (-1,+2), (+2,-1)
+    {{0, 0}, {-1, 0}, {+2, 0}, {-1, -2}, {+2, +1}},
+    // 2 -> 3: (0,0), (+2,0), (-1,0), (+2,+1), (-1,-2)
+    {{0, 0}, {+2, 0}, {-1, 0}, {+2, -1}, {-1, +2}},
+    // 3 -> 0: (0,0), (+1,0), (-2,0), (+1,-2), (-2,+1)
+    {{0, 0}, {+1, 0}, {-2, 0}, {+1, +2}, {-2, -1}},
+};
 } // namespace
 
 Game::Game(Board &board, Pieces &pieces) : mBoard(board), mPieces(pieces)
@@ -195,9 +226,37 @@ void Game::RotateCW()
         return;
     if (IsPaused())
         return;
-    int nextRot = (mRotation + 1) % 4;
-    if (mBoard.IsPossibleMovement(mPosX, mPosY, mPiece, nextRot))
-        mRotation = nextRot;
+
+    const int from = mRotation;
+    const int to = (mRotation + 1) % 4;
+
+    // Piece indices: 0 O, 1 I, 2 L, 3 J, 4 Z, 5 S, 6 T
+    // O doesn't need kicks; keep it stable.
+    const Kick *kicks = nullptr;
+    int kickCount = 1;
+    Kick onlyInPlace[1] = {{0, 0}};
+
+    if (mPiece == 1) {
+        kicks = kI_CW[from];
+        kickCount = 5;
+    } else if (mPiece == 0) {
+        kicks = onlyInPlace;
+        kickCount = 1;
+    } else {
+        kicks = kJLSTZ_CW[from];
+        kickCount = 5;
+    }
+
+    for (int i = 0; i < kickCount; i++) {
+        const int nx = mPosX + kicks[i].dx;
+        const int ny = mPosY + kicks[i].dy;
+        if (!mBoard.IsPossibleMovement(nx, ny, mPiece, to))
+            continue;
+        mPosX = nx;
+        mPosY = ny;
+        mRotation = to;
+        break;
+    }
 
     if (CanMoveDown())
         mLockAccumMs = 0;
