@@ -234,19 +234,15 @@ Parameters:
 */
 bool Board::IsPossibleMovement(int pX, int pY, int pPiece, int pRotation) const
 {
-    // Checks collision with pieces already stored in the board or the board
-    // limits This is just to check the 5x5 blocks of a piece with the
-    // appropiate area in the board
     for (int i1 = pX, i2 = 0; i1 < pX + PIECE_BLOCKS; i1++, i2++) {
         for (int j1 = pY, j2 = 0; j1 < pY + PIECE_BLOCKS; j1++, j2++) {
-            // Check if the piece is outside the limits of the board
+            // Check the limits of the board
             if (i1 < 0 || i1 > BOARD_WIDTH - 1 || j1 > BOARD_HEIGHT - 1) {
                 if (mPieces->GetBlockType(pPiece, pRotation, j2, i2) != 0)
                     return 0;
             }
 
-            // Check if the piece have collisioned with a block already stored
-            // in the map
+            // Check collision with a block placed in the map
             if (j1 >= 0) {
                 if ((mPieces->GetBlockType(pPiece, pRotation, j2, i2) != 0) &&
                     (!IsFreeBlock(i1, j1)))
@@ -255,7 +251,6 @@ bool Board::IsPossibleMovement(int pX, int pY, int pPiece, int pRotation) const
         }
     }
 
-    // No collision
     return true;
 }
 

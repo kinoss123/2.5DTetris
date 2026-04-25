@@ -25,7 +25,7 @@ class Game {
     void MoveRight();
     void SoftDrop();
     void HardDrop();
-    void RotateCW();
+    void Rotate(int direction);
 
     // State (read-only).
     bool IsGameOver() const { return mGameOver; }

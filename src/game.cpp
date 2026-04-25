@@ -24,30 +24,46 @@ struct Kick {
     int dy;
 };
 
-// SRS wall kicks (clockwise) using this game's coordinate system where +Y is
-// down. The published SRS tables use +Y up; we pre-flip dy here.
+// SRS wall kicks
+// The published SRS tables use +Y up; we pre-flip dy here.
 // Rotation transitions are indexed by the "from" rotation:
-//   0->1, 1->2, 2->3, 3->0.
-static const Kick kJLSTZ_CW[4][5] = {
-    // 0 -> 1: (0,0), (-1,0), (-1,+1), (0,-2), (-1,-2)
+//   0: spawn state, 1 90° CW, 2 180°, 3 90° CCW
+static const Kick JLSTZ_kick[8][5] = {
+    // 0 -> 1
     {{0, 0}, {-1, 0}, {-1, -1}, {0, +2}, {-1, +2}},
-    // 1 -> 2: (0,0), (+1,0), (+1,-1), (0,+2), (+1,+2)
-    {{0, 0}, {+1, 0}, {+1, +1}, {0, -2}, {+1, -2}},
-    // 2 -> 3: (0,0), (+1,0), (+1,+1), (0,-2), (+1,-2)
+    // 0 -> 3
     {{0, 0}, {+1, 0}, {+1, -1}, {0, +2}, {+1, +2}},
-    // 3 -> 0: (0,0), (-1,0), (-1,-1), (0,+2), (-1,+2)
+    // 1 -> 2
+    {{0, 0}, {+1, 0}, {+1, +1}, {0, -2}, {+1, -2}},
+    // 1 -> 0
+    {{0, 0}, {+1, 0}, {+1, +1}, {0, -2}, {+1, -2}},
+    // 2 -> 3
+    {{0, 0}, {+1, 0}, {+1, -1}, {0, +2}, {+1, +2}},
+    // 2 -> 1
+    {{0, 0}, {-1, 0}, {-1, -1}, {0, +2}, {-1, +2}},
+    // 3 -> 0
+    {{0, 0}, {-1, 0}, {-1, +1}, {0, -2}, {-1, -2}},
+    // 3 -> 2
     {{0, 0}, {-1, 0}, {-1, +1}, {0, -2}, {-1, -2}},
 };
 
-static const Kick kI_CW[4][5] = {
-    // 0 -> 1: (0,0), (-2,0), (+1,0), (-2,-1), (+1,+2)
+static const Kick I_kick[8][5] = {
+    // 0 -> 1
     {{0, 0}, {-2, 0}, {+1, 0}, {-2, +1}, {+1, -2}},
-    // 1 -> 2: (0,0), (-1,0), (+2,0), (-1,+2), (+2,-1)
+    // 0 -> 3
     {{0, 0}, {-1, 0}, {+2, 0}, {-1, -2}, {+2, +1}},
-    // 2 -> 3: (0,0), (+2,0), (-1,0), (+2,+1), (-1,-2)
+    // 1 -> 2
+    {{0, 0}, {-1, 0}, {+2, 0}, {-1, -2}, {+2, +1}},
+    // 1 -> 0
     {{0, 0}, {+2, 0}, {-1, 0}, {+2, -1}, {-1, +2}},
-    // 3 -> 0: (0,0), (+1,0), (-2,0), (+1,-2), (-2,+1)
+    // 2 -> 3
+    {{0, 0}, {+2, 0}, {-1, 0}, {+2, -1}, {-1, +2}},
+    // 2 -> 1
     {{0, 0}, {+1, 0}, {-2, 0}, {+1, +2}, {-2, -1}},
+    // 3 -> 0
+    {{0, 0}, {+1, 0}, {-2, 0}, {+1, +2}, {-2, -1}},
+    // 3 -> 2
+    {{0, 0}, {-2, 0}, {+1, 0}, {-2, +1}, {+1, -2}},
 };
 } // namespace
 
@@ -220,42 +236,32 @@ void Game::HardDrop()
     LandPiece();
 }
 
-void Game::RotateCW()
+void Game::Rotate(int direction)
 {
     if (mGameOver)
         return;
     if (IsPaused())
         return;
-
-    const int from = mRotation;
-    const int to = (mRotation + 1) % 4;
-
-    // Piece indices: 0 O, 1 I, 2 L, 3 J, 4 Z, 5 S, 6 T
-    // O doesn't need kicks; keep it stable.
-    const Kick *kicks = nullptr;
-    int kickCount = 1;
-    Kick onlyInPlace[1] = {{0, 0}};
-
-    if (mPiece == 1) {
-        kicks = kI_CW[from];
-        kickCount = 5;
-    } else if (mPiece == 0) {
-        kicks = onlyInPlace;
-        kickCount = 1;
-    } else {
-        kicks = kJLSTZ_CW[from];
-        kickCount = 5;
+    if (mPiece == 0) {
+        if (CanMoveDown())
+            mLockAccumMs = 0;
+        return;
     }
 
-    for (int i = 0; i < kickCount; i++) {
-        const int nx = mPosX + kicks[i].dx;
-        const int ny = mPosY + kicks[i].dy;
-        if (!mBoard.IsPossibleMovement(nx, ny, mPiece, to))
-            continue;
-        mPosX = nx;
-        mPosY = ny;
-        mRotation = to;
-        break;
+    const int state_result = (direction) ? (mRotation - 1 + 4) % 4 : (mRotation + 1) % 4;
+    int rotation_index = mRotation * 2 + direction;
+    const Kick (*kick_table)[5] = (mPiece == 1) ? I_kick : JLSTZ_kick;
+
+    for (int i = 0; i < 5; i++) {
+        const int nx = mPosX + kick_table[rotation_index][i].dx;
+        const int ny = mPosY + kick_table[rotation_index][i].dy;
+
+        if (mBoard.IsPossibleMovement(nx, ny, mPiece, state_result)) {
+            mPosX = nx;
+            mPosY = ny;
+            mRotation = state_result;
+            break;
+        }
     }
 
     if (CanMoveDown())
