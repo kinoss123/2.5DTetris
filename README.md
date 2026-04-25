@@ -1,6 +1,7 @@
 ## 2.5D Tetris
 
 Tetris game in 2.5D
+Control with arrow keys, x rotate clockwise, z rotate counter-clockwise, space to drop.
 
 ## Installation
 
@@ -11,32 +12,41 @@ Tetris game in 2.5D
 
 ### Clone:
 
+```bash
 git clone --recursive https://github.com/nh-phu/2.5DTetris.git
+```
 
 If you already cloned without --recursive:
 
+```bash
 git submodule update --init --recursive
+```
 
 ### Build
 
 #### Windows:
 
-bat
+```bat
 cmake -S . -B build
 cmake --build build --config Release --target tetris
 build\tetris.exe
+```
 
 #### Linux:
 
 - GNU make
 
+```bash
 make
+```
 
 - or CMake
 
+```bash
 cmake -S . -B build
 cmake --build build --target tetris
 ./build/tetris
+```
 
 ## Credits and License
 
