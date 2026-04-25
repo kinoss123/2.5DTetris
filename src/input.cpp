@@ -26,10 +26,12 @@ GameAction PollAction(int deltaMs, InputState &state)
     switch (key) {
     case KEY_ESCAPE:
         return GameAction::Quit;
-    case KEY_X:
+    case KEY_SPACE:
         return GameAction::HardDrop;
-    case KEY_Z:
+    case KEY_X:
         return GameAction::RotateCW;
+    case KEY_Z:
+        return GameAction::RotateCCW;
     default:
         break;
     }
@@ -115,7 +117,10 @@ void ApplyAction(GameAction action, Game &game)
         game.HardDrop();
         break;
     case GameAction::RotateCW:
-        game.RotateCW();
+        game.Rotate(0);
+        break;
+    case GameAction::RotateCCW:
+        game.Rotate(1);
         break;
     case GameAction::Quit:
     case GameAction::None:

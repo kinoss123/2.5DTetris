@@ -11,6 +11,7 @@ enum class GameAction {
     Down,
     HardDrop,
     RotateCW,
+    RotateCCW,
 };
 
 // Input state for held-key repeating.
