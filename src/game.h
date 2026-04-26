@@ -99,6 +99,10 @@ class Game {
     void AdvanceNextRotateAt();
 
     bool CanMoveDown() const;
+
+    int FallIntervalMs() const;
+
+
 };
 
 #endif // _GAME_
