@@ -22,7 +22,7 @@ static const int kRotateEveryScore = 500;
 // Speed levels: every 5000 points, fall interval drops by this step (ms).
 // Minimum interval is capped at kMinFallMs so the game stays playable.
 
-static const int kSpeedUpEveryScore = 3000;
+static const int kSpeedUpEveryScore = 200;
 
 static const int kFallStepMs        = 50;  // reduction per level
 
@@ -421,8 +421,8 @@ void Game::Tick(int deltaMs)
         mLockAccumMs = 0;
     }
 
-    while (mFallAccumMs >= kWaitTimeMs && !mGameOver) {
-        mFallAccumMs -= kWaitTimeMs;
+    while (mFallAccumMs >= FallIntervalMs() && !mGameOver) {
+        mFallAccumMs -= FallIntervalMs();
 
         if (CanMoveDown()) {
             mPosY++;
