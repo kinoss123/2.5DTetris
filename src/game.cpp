@@ -22,12 +22,11 @@ static const int kRotateEveryScore = 500;
 // Speed levels: every 5000 points, fall interval drops by this step (ms).
 // Minimum interval is capped at kMinFallMs so the game stays playable.
 
-static const int kSpeedUpEveryScore = 2000;
+static const int kSpeedUpEveryScore = 3000;
 
-static const int kFallStepMs        = 50;  // reduction per level
+static const int kFallStepMs = 50; // reduction per level
 
-static const int kMinFallMs         = 100; // fastest possible interval
-
+static const int kMinFallMs = 100; // fastest possible interval
 
 struct Kick {
     int dx;
@@ -176,10 +175,9 @@ bool Game::CanMoveDown() const
 // kSpeedUpEveryScore points, down to kMinFallMs.
 
 int Game::FallIntervalMs() const
-
 {
 
-    int level    = mScore / kSpeedUpEveryScore; // 0, 1, 2, …
+    int level = mScore / kSpeedUpEveryScore; // 0, 1, 2, …
 
     int interval = kWaitTimeMs - level * kFallStepMs;
 
@@ -188,7 +186,6 @@ int Game::FallIntervalMs() const
         interval = kMinFallMs;
 
     return interval;
-
 }
 
 void Game::SpawnFromNext()
@@ -282,7 +279,7 @@ void Game::Rotate(int direction)
 
     const int state_result = (direction) ? (mRotation - 1 + 4) % 4 : (mRotation + 1) % 4;
     int rotation_index = mRotation * 2 + direction;
-    const Kick (*kick_table)[5] = (mPiece == 1) ? I_kick : JLSTZ_kick;
+    const Kick(*kick_table)[5] = (mPiece == 1) ? I_kick : JLSTZ_kick;
 
     for (int i = 0; i < 5; i++) {
         const int nx = mPosX + kick_table[rotation_index][i].dx;
