@@ -99,6 +99,12 @@ class Game {
     void AdvanceNextRotateAt();
 
     bool CanMoveDown() const;
+
+    // Returns the current fall interval in ms based on score (speeds up every
+    // 5000 points).
+    int FallIntervalMs() const;
+
+
 };
 
 #endif // _GAME_

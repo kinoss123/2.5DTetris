@@ -19,6 +19,16 @@ static const int kLineClearPauseMs = 500;
 // Score threshold for cube rotation.
 static const int kRotateEveryScore = 500;
 
+// Speed levels: every 5000 points, fall interval drops by this step (ms).
+// Minimum interval is capped at kMinFallMs so the game stays playable.
+
+static const int kSpeedUpEveryScore = 3000;
+
+static const int kFallStepMs        = 50;  // reduction per level
+
+static const int kMinFallMs         = 100; // fastest possible interval
+
+
 struct Kick {
     int dx;
     int dy;
@@ -157,6 +167,28 @@ void Game::RollNext()
 bool Game::CanMoveDown() const
 {
     return mBoard.IsPossibleMovement(mPosX, mPosY + 1, mPiece, mRotation);
+}
+
+// Returns the fall interval in ms for the current score.
+
+// Starts at kWaitTimeMs (700 ms) and decreases by kFallStepMs every
+
+// kSpeedUpEveryScore points, down to kMinFallMs.
+
+int Game::FallIntervalMs() const
+
+{
+
+    int level    = mScore / kSpeedUpEveryScore; // 0, 1, 2, …
+
+    int interval = kWaitTimeMs - level * kFallStepMs;
+
+    if (interval < kMinFallMs)
+
+        interval = kMinFallMs;
+
+    return interval;
+
 }
 
 void Game::SpawnFromNext()
